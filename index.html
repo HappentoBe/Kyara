@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ガチャボット</title>
+  <style>
+    :root {
+      --primary: #7C3AED;
+      --primary-light: #A78BFA;
+      --accent: #EC4899;
+      --accent2: #F59E0B;
+      --bg: #0F0A1E;
+      --card: #1E1533;
+      --card2: #2A1F45;
+      --text: #F3F0FF;
+      --muted: #9D8EC7;
+      --success: #34D399;
+      --radius: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* ── Stars background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(124,58,237,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(236,72,153,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .main {
+      width: 100%;
+      max-width: 430px;
+      padding: 20px 16px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeUp 0.35s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 32px 0 24px; }
+    .hero-emoji { font-size: 72px; display: block; margin-bottom: 12px; animation: float 3s ease-in-out infinite; }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    .hero-title {
+      font-size: 30px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .hero-sub { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+    /* ── Slots ── */
+    .slots-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .slot {
+      flex: 1;
+      background: var(--card);
+      border: 2px dashed #4B3D70;
+      border-radius: var(--radius);
+      padding: 18px 12px;
+      text-align: center;
+      transition: border-color 0.3s, background 0.3s;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .slot.filled {
+      border: 2px solid var(--success);
+      background: rgba(52,211,153,0.08);
+    }
+    .slot-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 1px; }
+    .slot-icon  { font-size: 28px; }
+    .slot-id    { font-size: 12px; color: var(--success); font-weight: 700; word-break: break-all; }
+    .plus-sign  { font-size: 28px; color: var(--muted); flex-shrink: 0; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+      text-align: center;
+      font-family: inherit;
+    }
+    .btn:active:not(:disabled) { opacity: 0.8; transform: scale(0.97); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: 0 6px 24px rgba(124,58,237,0.4);
+      margin-bottom: 10px;
+    }
+    .btn-secondary {
+      background: var(--card2);
+      color: var(--primary-light);
+      border: 2px solid #4B3D70;
+      margin-bottom: 10px;
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--muted);
+      border: 2px solid #4B3D70;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, var(--accent2), #F97316);
+      color: white;
+      box-shadow: 0 6px 24px rgba(245,158,11,0.35);
+      margin-bottom: 10px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      border: 1px solid #2D2250;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+
+    /* ── Scanner ── */
+    #reader-1, #reader-2 {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: #000;
+    }
+    .scan-step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    /* ── Scanned badge ── */
+    .scanned-badge {
+      background: rgba(52,211,153,0.12);
+      border: 1.5px solid var(--success);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* ── Error ── */
+    .err-msg {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #FCA5A5;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* ── Gacha animation screen ── */
+    #screen-gacha { text-align: center; }
+    .gacha-stage {
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .gacha-reel {
+      font-size: 80px;
+      display: block;
+      animation: reel 0.12s steps(1) infinite;
+      filter: drop-shadow(0 0 20px rgba(236,72,153,0.7));
+    }
+    @keyframes reel {
+      0%   { content: '🤖'; transform: scale(1); }
+      14%  { transform: scale(1.1) rotate(-5deg); }
+      28%  { transform: scale(0.9) rotate(5deg); }
+      42%  { transform: scale(1.15) rotate(-3deg); }
+      57%  { transform: scale(0.85) rotate(3deg); }
+      71%  { transform: scale(1.1) rotate(-5deg); }
+      85%  { transform: scale(0.95) rotate(2deg); }
+      100% { transform: scale(1); }
+    }
+    .gacha-emojis { font-size: 80px; animation: spinEmoji 0.15s steps(1) infinite; }
+    @keyframes spinEmoji {
+      0%   { content: '🤖'; }
+    }
+    .gacha-title {
+      font-size: 22px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #A78BFA, #EC4899, #F59E0B);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradShift 0.5s linear infinite;
+    }
+    @keyframes gradShift {
+      0%   { background-position: 0%; }
+      100% { background-position: 200%; }
+    }
+    .gacha-bar-wrap {
+      width: 200px;
+      height: 8px;
+      background: #2D2250;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .gacha-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .gacha-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      animation: flashBg 0.4s ease-in-out infinite;
+      z-index: 0;
+    }
+    @keyframes flashBg {
+      0%,100% { background: transparent; }
+      50%     { background: rgba(124,58,237,0.07); }
+    }
+
+    /* ── Result screen ── */
+    #screen-result { text-align: center; }
+    .result-hero { padding: 20px 0 0; }
+    .result-label {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .result-title {
+      font-size: 26px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+    .character-frame {
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      padding: 4px;
+      box-shadow: 0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(236,72,153,0.2);
+      animation: glow 2s ease-in-out infinite;
+    }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(236,72,153,0.2); }
+      50%      { box-shadow: 0 0 60px rgba(124,58,237,0.7), 0 0 100px rgba(236,72,153,0.4); }
+    }
+    .character-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--card);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .character-inner img {
+      width: 85%;
+      height: 85%;
+      object-fit: contain;
+    }
+    .ids-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .id-badge {
+      background: var(--card2);
+      border: 1px solid #4B3D70;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-weight: 700;
+      color: var(--primary-light);
+    }
+
+    /* ── Confetti ── */
+    .confetti-wrap {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .confetti-piece {
+      position: absolute;
+      top: -10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<main class="main">
+
+  <!-- ① ホーム画面 -->
+  <div id="screen-home" class="screen active">
+    <div class="hero">
+      <span class="hero-emoji">🤖</span>
+      <div class="hero-title">ガチャボット</div>
+      <div class="hero-sub">QRコードを2つ読み込んでね<br>ふたりのキャラクターが生まれるよ！</div>
+    </div>
+
+    <div class="slots-row">
+      <div class="slot" id="slot1">
+        <div class="slot-label">1つ目</div>
+        <div class="slot-icon">📷</div>
+      </div>
+      <div class="plus-sign">✕</div>
+      <div class="slot" id="slot2">
+        <div class="slot-label">2つ目</div>
+        <div class="slot-icon">📷</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-scan1" onclick="startScan(1)">📷 1つ目のQRを読む</button>
+    <button class="btn btn-secondary" id="btn-scan2" onclick="startScan(2)" disabled>📷 2つ目のQRを読む</button>
+  </div>
+
+  <!-- ② スキャン画面 -->
+  <div id="screen-scan" class="screen">
+    <div class="card">
+      <div id="scan-step-badge" class="scan-step-badge">📡 1つ目</div>
+      <div class="card-title" id="scan-title">1つ目のQRコードを読み込み中</div>
+      <div class="card-sub" id="scan-sub">カメラにQRコードを向けてください</div>
+      <div id="reader-1"></div>
+      <div id="reader-2" style="display:none"></div>
+      <div id="scan-err" class="err-msg"></div>
+      <button class="btn btn-outline" onclick="cancelScan()">← キャンセル</button>
+    </div>
+  </div>
+
+  <!-- ③ ガチャアニメーション画面 -->
+  <div id="screen-gacha" class="screen">
+    <div class="gacha-flash"></div>
+    <div class="gacha-stage">
+      <div class="gacha-emojis" id="gacha-emoji">🤖</div>
+      <div class="gacha-title">キャラクター生成中…</div>
+      <div class="gacha-bar-wrap">
+        <div class="gacha-bar" id="gacha-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 結果画面 -->
+  <div id="screen-result" class="screen">
+    <div class="confetti-wrap" id="confetti-wrap"></div>
+    <div class="result-hero">
+      <div class="result-label">✨ あなたたちのキャラクター</div>
+      <div class="result-title">完成！</div>
+
+      <div class="character-frame">
+        <div class="character-inner">
+          <img id="character-img" src="" alt="キャラクター">
+        </div>
+      </div>
+
+      <div class="ids-row">
+        <span class="id-badge" id="result-id1">-</span>
+        <span style="color:var(--muted)">×</span>
+        <span class="id-badge" id="result-id2">-</span>
+      </div>
+    </div>
+
+    <button class="btn btn-save" onclick="saveAsPNG()">💾 PNG で保存する</button>
+    <button class="btn btn-outline" onclick="resetAll()">🔄 もう一度</button>
+  </div>
+
+</main>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+// ============================================================
+// 状態
+// ============================================================
+let id1 = null;
+let id2 = null;
+let currentStep = 0;
+let scanner = null;
+
+// ============================================================
+// 画面切り替え
+// ============================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+// ============================================================
+// IDを取得
+// テキストからInstagram IDか、そのままseedとして使う
+// ============================================================
+function extractSeed(text) {
+  if (!text) return null;
+  text = text.trim();
+
+  // Instagram URL
+  const igMatch = text.match(
+    /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([A-Za-z0-9._]{1,60})\/?(?:[?#].*)?$/
+  );
+  if (igMatch) return igMatch[1];
+
+  // URLなら全部seedとして使う（長い場合は切る）
+  if (text.length > 80) return text.slice(0, 80);
+  return text;
+}
+
+// ============================================================
+// スキャン開始
+// ============================================================
+function startScan(step) {
+  currentStep = step;
+  stopScanner();
+
+  const readerEl1 = document.getElementById('reader-1');
+  const readerEl2 = document.getElementById('reader-2');
+  readerEl1.style.display = step === 1 ? 'block' : 'none';
+  readerEl2.style.display = step === 2 ? 'block' : 'none';
+
+  const readerId = step === 1 ? 'reader-1' : 'reader-2';
+  const badge  = document.getElementById('scan-step-badge');
+  const title  = document.getElementById('scan-title');
+  const sub    = document.getElementById('scan-sub');
+  const errEl  = document.getElementById('scan-err');
+
+  badge.textContent = `📡 ${step}つ目`;
+  title.textContent = `${step}つ目のQRコードを読み込み中`;
+  sub.textContent   = 'カメラにQRコードを向けてください';
+  errEl.style.display = 'none';
+
+  showScreen('scan');
+
+  setTimeout(() => {
+    scanner = new Html5Qrcode(readerId);
+    scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 240, height: 240 } },
+      (text) => {
+        const seed = extractSeed(text);
+        if (!seed) {
+          showScanErr('QRコードを読み取れませんでした。もう一度試してください。');
+          return;
+        }
+        onScanned(step, seed);
+      },
+      () => {}
+    ).catch(() => {
+      showScanErr('カメラにアクセスできません。ブラウザのカメラ許可を確認してください。');
+    });
+  }, 300);
+}
+
+function showScanErr(msg) {
+  const el = document.getElementById('scan-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function cancelScan() {
+  stopScanner();
+  showScreen('home');
+}
+
+function stopScanner() {
+  if (scanner) {
+    scanner.clear().catch(() => {});
+    scanner = null;
+  }
+}
+
+// ============================================================
+// スキャン完了
+// ============================================================
+function onScanned(step, seed) {
+  stopScanner();
+
+  if (step === 1) {
+    id1 = seed;
+    updateSlot(1, seed);
+    document.getElementById('btn-scan1').textContent = '✅ 1つ目 スキャン済み';
+    document.getElementById('btn-scan2').disabled = false;
+    showScreen('home');
+  } else {
+    id2 = seed;
+    updateSlot(2, seed);
+    showScreen('home');
+    // 両方揃ったのでガチャへ
+    setTimeout(() => startGacha(), 400);
+  }
+}
+
+function updateSlot(num, seed) {
+  const slot = document.getElementById('slot' + num);
+  slot.classList.add('filled');
+  const display = seed.length > 16 ? seed.slice(0, 14) + '…' : seed;
+  slot.innerHTML = `
+    <div class="slot-label">${num}つ目 ✅</div>
+    <div class="slot-icon">🤖</div>
+    <div class="slot-id">${display}</div>
+  `;
+}
+
+// ============================================================
+// ガチャアニメーション
+// ============================================================
+const GACHA_EMOJIS = ['🤖','👾','🦾','🎰','⚡','🌟','💫','🎲','🔮','🎭','🧬','🛸'];
+
+function startGacha() {
+  showScreen('gacha');
+  const emojiEl = document.getElementById('gacha-emoji');
+  const barEl   = document.getElementById('gacha-bar');
+  const duration = 3000; // 3秒
+  const start = Date.now();
+
+  barEl.style.width = '0%';
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // ランダム絵文字をくるくる
+    emojiEl.textContent = GACHA_EMOJIS[Math.floor(Math.random() * GACHA_EMOJIS.length)];
+
+    // プログレスバー
+    barEl.style.width = (progress * 100) + '%';
+
+    if (elapsed >= duration) {
+      clearInterval(interval);
+      showResult();
+    }
+  }, 120);
+}
+
+// ============================================================
+// 結果表示
+// ============================================================
+function showResult() {
+  const seed = encodeURIComponent(id1 + '+' + id2);
+  const url  = `https://api.dicebear.com/9.x/bottts/svg?seed=${seed}`;
+
+  document.getElementById('character-img').src = url;
+  document.getElementById('result-id1').textContent = id1.length > 14 ? id1.slice(0, 12) + '…' : id1;
+  document.getElementById('result-id2').textContent = id2.length > 14 ? id2.slice(0, 12) + '…' : id2;
+
+  showScreen('result');
+  launchConfetti();
+}
+
+// ============================================================
+// コンフェッティ
+// ============================================================
+function launchConfetti() {
+  const wrap = document.getElementById('confetti-wrap');
+  wrap.innerHTML = '';
+  const colors = ['#7C3AED','#EC4899','#F59E0B','#34D399','#60A5FA','#F472B6'];
+
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left     = Math.random() * 100 + '%';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width    = (Math.random() * 8 + 6) + 'px';
+    el.style.height   = (Math.random() * 8 + 6) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    el.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+    el.style.animationDelay   = (Math.random() * 0.8) + 's';
+    wrap.appendChild(el);
+  }
+}
+
+// ============================================================
+// PNG保存
+// ============================================================
+async function saveAsPNG() {
+  const seed = encodeURIComponent(id1 + '+' + id2);
+  const svgUrl = `https://api.dicebear.com/9.x/bottts/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9&size=400`;
+
+  try {
+    const res  = await fetch(svgUrl);
+    const text = await res.text();
+    const blob = new Blob([text], { type: 'image/svg+xml' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#1E1533';
+      ctx.fillRect(0, 0, 400, 400);
+      ctx.drawImage(img, 0, 0, 400, 400);
+      URL.revokeObjectURL(blobUrl);
+
+      canvas.toBlob(pngBlob => {
+        const a = document.createElement('a');
+        a.href     = URL.createObjectURL(pngBlob);
+        a.download = `gachabot-${id1}-${id2}.png`;
+        a.click();
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      // フォールバック：SVGをそのままダウンロード
+      const a = document.createElement('a');
+      a.href     = blobUrl;
+      a.download = `gachabot-${id1}-${id2}.svg`;
+      a.click();
+    };
+    img.src = blobUrl;
+
+  } catch (e) {
+    alert('保存に失敗しました。ブラウザの設定を確認してください。');
+  }
+}
+
+// ============================================================
+// リセット
+// ============================================================
+function resetAll() {
+  id1 = null;
+  id2 = null;
+  currentStep = 0;
+  stopScanner();
+
+  // スロットをリセット
+  ['1','2'].forEach(n => {
+    const slot = document.getElementById('slot' + n);
+    slot.classList.remove('filled');
+    slot.innerHTML = `
+      <div class="slot-label">${n}つ目</div>
+      <div class="slot-icon">📷</div>
+    `;
+  });
+
+  document.getElementById('btn-scan1').textContent = '📷 1つ目のQRを読む';
+  document.getElementById('btn-scan2').disabled = true;
+  document.getElementById('confetti-wrap').innerHTML = '';
+
+  showScreen('home');
+}
+</script>
+
+</body>
+</html>
