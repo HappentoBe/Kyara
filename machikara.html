@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>まちキャラ</title>
+  <title>ガチャボット</title>
   <meta name="description" content="2人のInstagram IDで世界に1つのキャラクターを生成">
   <meta name="theme-color" content="#6C63FF">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="まちキャラ">
+  <meta name="apple-mobile-web-app-title" content="ガチャボット">
   <link id="pwa-manifest" rel="manifest">
 
   <style>
     :root {
       --primary:   #6C63FF;
       --primary-d: #5A52D5;
+      --primary-l: #A78BFA;
       --secondary: #FF6B9D;
       --accent:    #FFD93D;
       --bg:        #0F0E17;
@@ -42,15 +43,6 @@
     .screen { display:none; flex-direction:column; align-items:center; min-height:100vh; padding:2rem 1.5rem 3rem; }
     .screen.active { display:flex; }
 
-    /* ── Settings button ── */
-    .fab-settings {
-      position:fixed; top:1rem; right:1rem; z-index:99;
-      background:var(--card); border:1px solid var(--border);
-      border-radius:50%; width:40px; height:40px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; font-size:1.1rem;
-    }
-
     /* ── Typography helpers ── */
     .grad-text {
       background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -72,19 +64,6 @@
     /* ── Cards ── */
     .card { width:100%; background:var(--card); border-radius:var(--r); padding:1.4rem; border:1px solid var(--border); margin-bottom:1rem; }
 
-    /* ── Inputs ── */
-    .lbl { font-size:0.78rem; color:var(--muted); margin-bottom:0.35rem; display:block; }
-    .inp {
-      width:100%; padding:0.85rem 1rem;
-      background:var(--card2); border:1.5px solid var(--border);
-      border-radius:12px; color:var(--text); font-size:1rem; font-family:inherit;
-      outline:none; transition:border-color 0.2s;
-    }
-    .inp:focus { border-color:var(--primary); }
-    .inp::placeholder { color:var(--muted); }
-    .inp-row { display:flex; align-items:center; gap:0.5rem; }
-    .inp-row .at { color:var(--muted); font-size:1.1rem; line-height:2.8rem; }
-
     /* ── Buttons ── */
     .btn {
       width:100%; padding:1rem; border:none; border-radius:14px;
@@ -101,13 +80,6 @@
     /* ── Error ── */
     .err { color:var(--error); font-size:0.83rem; margin-top:0.4rem; display:none; }
 
-    /* ── QR wrap ── */
-    .qr-frame {
-      background:#fff; border-radius:14px; padding:1rem;
-      display:inline-block; box-shadow:0 8px 32px rgba(108,99,255,.35);
-      margin:1rem 0;
-    }
-
     /* ── Scanner ── */
     .scanner-box { width:100%; border-radius:14px; overflow:hidden; border:2px solid var(--primary); background:#000; }
     .scanner-box video { width:100%; display:block; }
@@ -118,6 +90,15 @@
     .dots span:nth-child(1) { background:var(--primary); }
     .dots span:nth-child(2) { background:var(--secondary); animation-delay:.2s; }
     .dots span:nth-child(3) { background:var(--accent); animation-delay:.4s; }
+
+    /* ── Scanned ID display ── */
+    .scanned-id {
+      display:flex; align-items:center; gap:.5rem;
+      background:rgba(6,214,160,.1); border:1.5px solid var(--success);
+      border-radius:12px; padding:.7rem 1rem; margin:.8rem 0;
+    }
+    .scanned-id .check { font-size:1.1rem; }
+    .scanned-id .name { font-weight:700; color:var(--success); }
 
     /* ── Gacha animation ── */
     .gacha-wrap { position:relative; width:180px; height:180px; margin:1.5rem auto; }
@@ -148,7 +129,74 @@
     }
     .sty-btn.active { border-color:var(--primary); color:var(--primary); background:rgba(108,99,255,.12); }
 
+    /* ── Stars background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(108,99,255,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255,107,157,0.1) 0%, transparent 50%);
+    }
+
+    /* ── Hero ── */
+    .hero { text-align:center; padding:32px 0 24px; width:100%; }
+    .hero-emoji {
+      font-size:72px; display:block; margin-bottom:12px;
+      animation:float 3s ease-in-out infinite;
+    }
+    .hero-title {
+      font-size:30px; font-weight:900; letter-spacing:2px; margin-bottom:8px;
+      background:linear-gradient(135deg, var(--primary-l), var(--secondary));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .hero-sub { font-size:14px; color:var(--muted); line-height:1.7; }
+
+    /* ── Slots ── */
+    .slots-row {
+      display:flex; align-items:center; justify-content:center;
+      gap:12px; margin:24px 0; width:100%;
+    }
+    .slot {
+      flex:1; background:var(--card);
+      border:2px dashed rgba(108,99,255,0.45);
+      border-radius:20px; padding:18px 12px;
+      text-align:center; transition:border-color 0.3s, background 0.3s;
+      min-height:100px; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:6px;
+    }
+    .slot.filled {
+      border:2px solid var(--success);
+      background:rgba(6,214,160,0.08);
+    }
+    .slot-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:1px; }
+    .slot-icon  { font-size:28px; }
+    .slot-id    { font-size:12px; color:var(--success); font-weight:700; word-break:break-all; }
+    .plus-sign  { font-size:28px; color:var(--muted); flex-shrink:0; }
+
+    /* ── Primary / Secondary buttons (home screen) ── */
+    .btn-primary {
+      display:block; width:100%; padding:16px 20px; border:none;
+      border-radius:14px; font-size:15px; font-weight:700;
+      cursor:pointer; font-family:inherit; text-align:center;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      color:#fff; box-shadow:0 6px 24px rgba(108,99,255,0.4);
+      margin-bottom:10px; transition:opacity 0.15s, transform 0.15s;
+    }
+    .btn-primary:active:not(:disabled) { opacity:0.8; transform:scale(0.97); }
+    .btn-primary:disabled { opacity:0.35; cursor:not-allowed; }
+    .btn-secondary {
+      display:block; width:100%; padding:16px 20px; border:none;
+      border-radius:14px; font-size:15px; font-weight:700;
+      cursor:pointer; font-family:inherit; text-align:center;
+      background:var(--card2); color:var(--primary-l);
+      border:2px solid rgba(108,99,255,0.35);
+      margin-bottom:10px; transition:opacity 0.15s, transform 0.15s;
+    }
+    .btn-secondary:active:not(:disabled) { opacity:0.8; transform:scale(0.97); }
+    .btn-secondary:disabled { opacity:0.35; cursor:not-allowed; }
+
     /* ── Animations ── */
+    @keyframes float        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
     @keyframes dotPop       { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.6} }
     @keyframes gachaRotate  { to{transform:rotate(360deg)} }
     @keyframes sparkleFloat { from{transform:translateY(0) rotate(0deg) scale(1)} to{transform:translateY(-15px) rotate(25deg) scale(1.25)} }
@@ -159,166 +207,77 @@
 <body>
 <div class="app">
 
-  <!-- ⚙️ settings shortcut -->
-  <button class="fab-settings" onclick="showScreen('config')" title="Firebase設定">⚙️</button>
-
   <!-- ══════════════════════════════════════
-       WELCOME
+       WELCOME（ホーム）
   ══════════════════════════════════════ -->
   <div id="screen-welcome" class="screen active">
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;text-align:center;">
-      <div style="font-size:3.5rem;margin-bottom:.5rem;">🎨</div>
-      <h1 style="font-size:2.4rem;font-weight:900;margin-bottom:.3rem;" class="grad-text">まちキャラ</h1>
-      <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:2.5rem;">
-        2人のInstagram IDを組み合わせて<br>世界に1つだけのキャラクターを生成！
-      </p>
-      <div style="width:100%;">
-        <button class="btn btn-p" onclick="startHostFlow()">✨ セッション開始（ホスト）</button>
-        <button class="btn btn-s" onclick="startGuestFlow()">🔗 参加する（ゲスト）</button>
-      </div>
-      <p style="color:var(--muted);font-size:.75rem;margin-top:2rem;line-height:1.7;">
-        お互いのInstagram QRをスキャンし合って<br>2人だけのキャラクターを作ろう！
-      </p>
+    <div class="hero">
+      <span class="hero-emoji">🤖</span>
+      <div class="hero-title">ガチャボット</div>
+      <div class="hero-sub">QRコードを2つ読み込んでね<br>ふたりのキャラクターが生まれるよ！</div>
     </div>
+
+    <div class="slots-row">
+      <div class="slot" id="slot1">
+        <div class="slot-label">1つ目</div>
+        <div class="slot-icon">📷</div>
+      </div>
+      <div class="plus-sign">✕</div>
+      <div class="slot" id="slot2">
+        <div class="slot-label">2つ目</div>
+        <div class="slot-icon">📷</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-scan1" onclick="startApp1()">📷 1つ目のQRを読む</button>
+    <button class="btn-secondary" id="btn-scan2" onclick="startApp2()" disabled>📷 2つ目のQRを読む</button>
   </div>
 
   <!-- ══════════════════════════════════════
-       CONFIG
+       SCAN 1 — 1人目のQRをスキャン
   ══════════════════════════════════════ -->
-  <div id="screen-config" class="screen">
+  <div id="screen-scan1" class="screen">
     <div style="width:100%;padding-top:3.5rem;">
-      <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:.4rem;">⚙️ Firebase 設定</h2>
-      <p style="color:var(--muted);font-size:.83rem;margin-bottom:1.5rem;line-height:1.6;">
-        Firebase Console → プロジェクトの設定 → 全般タブ で確認できます。
+      <span class="step-badge">STEP 1 / 2</span>
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.4rem;">1人目のQRをスキャン</h2>
+      <p style="color:var(--muted);font-size:.83rem;margin-bottom:1rem;">
+        InstagramアプリのQRコードにカメラを向けてください
       </p>
-      <div style="margin-bottom:1rem;">
-        <label class="lbl">API Key</label>
-        <input id="fb-api-key" class="inp" type="text" placeholder="AIza..." autocomplete="off" spellcheck="false">
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label class="lbl">Project ID</label>
-        <input id="fb-project-id" class="inp" type="text" placeholder="my-project-id" autocomplete="off" spellcheck="false">
-      </div>
-      <div id="config-err" class="err"></div>
-      <button class="btn btn-p" onclick="saveConfig()" style="margin-top:.8rem;">保存してはじめる</button>
-      <button class="btn btn-g" onclick="goHome()">キャンセル</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       HOST: STEP 1 — IDを入力
-  ══════════════════════════════════════ -->
-  <div id="screen-host-id" class="screen">
-    <div style="width:100%;padding-top:3.5rem;">
-      <span class="step-badge">HOST — STEP 1 / 3</span>
-      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.4rem;">あなたのInstagram IDを入力</h2>
-      <p style="color:var(--muted);font-size:.83rem;margin-bottom:1.4rem;">入力するとQRコードが生成されます</p>
-      <div style="margin-bottom:1rem;">
-        <label class="lbl">Instagram ID（@なし）</label>
-        <div class="inp-row">
-          <span class="at">@</span>
-          <input id="host-id-input" class="inp" type="text" placeholder="your_instagram_id"
-            autocomplete="off" spellcheck="false"
-            oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9._]/g,'')">
-        </div>
-      </div>
-      <div id="host-id-err" class="err"></div>
-      <button class="btn btn-p" onclick="onHostIdEntered()" style="margin-top:.8rem;">QRコードを生成 →</button>
-      <button class="btn btn-g" onclick="goHome()">← 戻る</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       HOST: STEP 2 — QRを見せる
-  ══════════════════════════════════════ -->
-  <div id="screen-host-show" class="screen">
-    <div style="width:100%;text-align:center;padding-top:3.5rem;">
-      <span class="step-badge">HOST — STEP 2 / 3</span>
-      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem;">このQRを相手にスキャンしてもらう</h2>
-      <p style="color:var(--muted);font-size:.82rem;margin-bottom:.8rem;">相手が「参加する」を押してカメラを向けてください</p>
-      <div id="host-show-badge" class="id-tag">@---</div>
-      <div class="qr-frame"><div id="host-qr"></div></div>
-      <div class="dots"><span></span><span></span><span></span></div>
-      <p style="color:var(--muted);font-size:.84rem;">相手の参加を待っています...</p>
-      <button class="btn btn-g" onclick="goHome()" style="margin-top:2rem;">キャンセル</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       HOST: STEP 3 — ゲストのQRをスキャン
-  ══════════════════════════════════════ -->
-  <div id="screen-host-scan" class="screen">
-    <div style="width:100%;padding-top:3.5rem;">
-      <span class="step-badge">HOST — STEP 3 / 3</span>
-      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.4rem;">相手のQRコードをスキャン</h2>
-      <p style="color:var(--muted);font-size:.82rem;margin-bottom:1rem;">相手のスマホに表示されたQRにカメラを向けてください</p>
       <div class="scanner-box">
         <video id="scan-video1" playsinline autoplay muted></video>
         <canvas id="scan-canvas1" style="display:none;"></canvas>
       </div>
-      <div id="host-scan-err" class="err" style="margin-top:.5rem;"></div>
-      <button class="btn btn-g" onclick="goHome()" style="margin-top:1.5rem;">キャンセル</button>
+      <div id="scan1-err" class="err" style="margin-top:.5rem;"></div>
+      <button class="btn btn-g" onclick="goHome()" style="margin-top:1.5rem;">← ホームへ</button>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════
-       GUEST: STEP 1 — ホストのQRをスキャン
+       SCAN 2 — 2人目のQRをスキャン
   ══════════════════════════════════════ -->
-  <div id="screen-guest-scan" class="screen">
+  <div id="screen-scan2" class="screen">
     <div style="width:100%;padding-top:3.5rem;">
-      <span class="step-badge">GUEST — STEP 1 / 2</span>
-      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.4rem;">ホストのQRコードをスキャン</h2>
-      <p style="color:var(--muted);font-size:.82rem;margin-bottom:1rem;">ホストのスマホに表示されたQRにカメラを向けてください</p>
+      <span class="step-badge">STEP 2 / 2</span>
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.4rem;">2人目のQRをスキャン</h2>
+      <p style="color:var(--muted);font-size:.83rem;margin-bottom:.6rem;">
+        もう1人のInstagramQRにカメラを向けてください
+      </p>
+      <div id="scan1-result" class="scanned-id">
+        <span class="check">✅</span>
+        <span id="scan1-name" class="name">@---</span>
+        <span style="color:var(--muted);font-size:.78rem;">スキャン済み</span>
+      </div>
       <div class="scanner-box">
         <video id="scan-video2" playsinline autoplay muted></video>
         <canvas id="scan-canvas2" style="display:none;"></canvas>
       </div>
-      <div id="guest-scan-err" class="err" style="margin-top:.5rem;"></div>
-      <button class="btn btn-g" onclick="goHome()" style="margin-top:1.5rem;">キャンセル</button>
+      <div id="scan2-err" class="err" style="margin-top:.5rem;"></div>
+      <button class="btn btn-g" onclick="goHome()" style="margin-top:1.5rem;">← ホームへ</button>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════
-       GUEST: STEP 2 — 自分のIDを入力
-  ══════════════════════════════════════ -->
-  <div id="screen-guest-id" class="screen">
-    <div style="width:100%;padding-top:3.5rem;">
-      <span class="step-badge">GUEST — STEP 2 / 2</span>
-      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem;">あなたのInstagram IDを入力</h2>
-      <p style="color:var(--muted);font-size:.82rem;margin-bottom:.6rem;">入力するとQRが生成されます。ホストにスキャンしてもらおう！</p>
-      <p style="color:var(--muted);font-size:.75rem;">接続済みホスト</p>
-      <div id="guest-host-tag" class="id-tag" style="margin-bottom:1rem;">@---</div>
-      <div style="margin-bottom:1rem;">
-        <label class="lbl">Instagram ID（@なし）</label>
-        <div class="inp-row">
-          <span class="at">@</span>
-          <input id="guest-id-input" class="inp" type="text" placeholder="your_instagram_id"
-            autocomplete="off" spellcheck="false"
-            oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9._]/g,'')">
-        </div>
-      </div>
-      <div id="guest-id-err" class="err"></div>
-      <button class="btn btn-p" onclick="onGuestIdEntered()" style="margin-top:.8rem;">QRを表示する →</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       GUEST: QRを見せる（ホスト待ち）
-  ══════════════════════════════════════ -->
-  <div id="screen-guest-show" class="screen">
-    <div style="width:100%;text-align:center;padding-top:3.5rem;">
-      <span class="step-badge">GUEST — 完了待ち</span>
-      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem;">このQRをホストにスキャンしてもらう</h2>
-      <p style="color:var(--muted);font-size:.82rem;margin-bottom:.5rem;">ホストがスキャンするとキャラクターが生成されます！</p>
-      <div id="guest-show-tag" class="id-tag">@---</div>
-      <div class="qr-frame"><div id="guest-qr"></div></div>
-      <div class="dots"><span></span><span></span><span></span></div>
-      <p style="color:var(--muted);font-size:.84rem;">ホストのスキャンを待っています...</p>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       GENERATING（両端共通）
+       GENERATING
   ══════════════════════════════════════ -->
   <div id="screen-generating" class="screen">
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;text-align:center;">
@@ -340,7 +299,7 @@
   </div>
 
   <!-- ══════════════════════════════════════
-       RESULT（両端共通）
+       RESULT
   ══════════════════════════════════════ -->
   <div id="screen-result" class="screen">
     <div style="width:100%;text-align:center;padding-top:2rem;animation:fadeUp .5s ease;">
@@ -362,8 +321,7 @@
         <button class="sty-btn" onclick="switchStyle('fun-emoji',this)">😎 絵文字</button>
       </div>
       <button class="btn btn-a" onclick="downloadCharacter()">💾 PNG保存</button>
-      <button class="btn btn-s" onclick="shareCharacter()">📤 シェア</button>
-      <button class="btn btn-g" onclick="goHome()">🏠 ホームへ</button>
+      <button class="btn btn-s" onclick="goHome()">🔄 リセット</button>
     </div>
   </div>
 
@@ -381,11 +339,6 @@
 
 </div><!-- /app -->
 
-<!-- Firebase v8 compat -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<!-- QR生成 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <!-- QRスキャン (jsQR) -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
@@ -394,24 +347,20 @@
 // PWA マニフェスト
 // ============================================================
 (function(){
-  const m = {name:'まちキャラ',short_name:'まちキャラ',description:'2人のInstagramIDでキャラクターを生成',
+  const m = {name:'ガチャボット',short_name:'ガチャボット',description:'2人のInstagramIDでキャラクターを生成',
     start_url:'./',display:'standalone',background_color:'#0F0E17',theme_color:'#6C63FF',
-    icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>",sizes:'192x192',type:'image/svg+xml'}]};
+    icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>",sizes:'192x192',type:'image/svg+xml'}]};
   document.getElementById('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}));
 })();
 
 // ============================================================
 // STATE
 // ============================================================
-let db          = null;
-let role        = null;   // 'host' | 'guest'
-let sessionId   = null;   // = hostId
-let hostId      = null;
-let guestId     = null;
+let id1        = null;   // 1人目のInstagram ID
+let id2        = null;   // 2人目のInstagram ID
 let currentSeed = null;
 let curStyle    = 'bottts';
-let unsub       = null;   // Firestore listener unsubscribe
-const activeScans = {};   // active camera scans { key: {stream, rafId, videoId} }
+const activeScans = {};
 
 // ============================================================
 // SCREEN
@@ -420,11 +369,29 @@ function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
 }
+function resetSlots() {
+  ['1','2'].forEach(n => {
+    const slot = document.getElementById('slot' + n);
+    slot.classList.remove('filled');
+    slot.innerHTML = `<div class="slot-label">${n}つ目</div><div class="slot-icon">📷</div>`;
+  });
+  document.getElementById('btn-scan1').textContent = '📷 1つ目のQRを読む';
+  document.getElementById('btn-scan2').disabled = true;
+}
+function updateSlot(num, igId) {
+  const slot = document.getElementById('slot' + num);
+  slot.classList.add('filled');
+  const display = igId.length > 16 ? igId.slice(0, 14) + '…' : igId;
+  slot.innerHTML = `
+    <div class="slot-label">${num}つ目 ✅</div>
+    <div class="slot-icon">🤖</div>
+    <div class="slot-id">@${display}</div>
+  `;
+}
 function goHome() {
   stopScanners();
-  if (unsub) { unsub(); unsub = null; }
-  clearDiv('host-qr'); clearDiv('guest-qr');
-  role = sessionId = hostId = guestId = currentSeed = null;
+  id1 = id2 = currentSeed = null;
+  resetSlots();
   showScreen('welcome');
 }
 function showErr(id, msg) {
@@ -434,50 +401,6 @@ function showErr(id, msg) {
 function hideErr(id) {
   const el = document.getElementById(id);
   if (el) el.style.display = 'none';
-}
-function showFatal(msg) {
-  document.getElementById('err-detail').textContent = msg;
-  showScreen('error');
-}
-function clearDiv(id) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = '';
-}
-
-// ============================================================
-// FIREBASE CONFIG
-// ============================================================
-function loadConfig() {
-  const k = localStorage.getItem('mc_api'); const p = localStorage.getItem('mc_pid');
-  if (k && p) { document.getElementById('fb-api-key').value = k; document.getElementById('fb-project-id').value = p; return initFB(k, p); }
-  return false;
-}
-function saveConfig() {
-  const k = document.getElementById('fb-api-key').value.trim();
-  const p = document.getElementById('fb-project-id').value.trim();
-  hideErr('config-err');
-  if (!k || !p)            return showErr('config-err', 'API Key と Project ID を入力してください。');
-  if (!k.startsWith('AIza')) return showErr('config-err', '正しいAPI Keyを入力してください（AIzaで始まります）。');
-  if (!initFB(k, p))       return showErr('config-err', '初期化に失敗しました。入力内容を確認してください。');
-  localStorage.setItem('mc_api', k); localStorage.setItem('mc_pid', p);
-  // pending join?
-  const pj = sessionStorage.getItem('pending_join');
-  if (pj) { sessionStorage.removeItem('pending_join'); role = 'guest'; onGuestScannedHost(pj); return; }
-  showScreen('welcome');
-}
-function initFB(k, p) {
-  try {
-    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp({apiKey:k, authDomain:`${p}.firebaseapp.com`, projectId:p});
-    db = firebase.firestore(app); return true;
-  } catch(e) { console.error(e); return false; }
-}
-
-// ============================================================
-// QR GENERATION
-// ============================================================
-function makeQR(elId, url) {
-  clearDiv(elId);
-  return new QRCode(document.getElementById(elId), {text:url, width:200, height:200, colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M});
 }
 
 // ============================================================
@@ -552,162 +475,50 @@ function extractIgId(text) {
 }
 
 // ============================================================
-// SEED
+// SEED & DICEBEAR
 // ============================================================
 function makeSeed(a, b) { return [a, b].sort().join(''); }
-
-// ============================================================
-// DICEBEAR URL
-// ============================================================
 function charUrl(seed, style) {
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
 // ============================================================
-// HOST FLOW
+// APP FLOW
 // ============================================================
-function startHostFlow() {
-  if (!db) { showScreen('config'); return; }
-  role = 'host';
-  document.getElementById('host-id-input').value = '';
-  hideErr('host-id-err');
-  showScreen('host-id');
-}
-
-async function onHostIdEntered() {
-  const val = document.getElementById('host-id-input').value.trim().replace(/^@/, '');
-  hideErr('host-id-err');
-  if (!val) return showErr('host-id-err', 'Instagram IDを入力してください。');
-  if (!/^[a-zA-Z0-9._]{1,30}$/.test(val)) return showErr('host-id-err', '正しいIDを入力してください（英数字・.・_のみ）。');
-
-  hostId = val.toLowerCase();
-  sessionId = hostId;
-  try {
-    await db.collection('sessions').doc(sessionId).set({
-      hostId, guestId: null, status: 'waiting', seed: null,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    document.getElementById('host-show-badge').textContent = '@' + hostId;
-    makeQR('host-qr', `https://www.instagram.com/${hostId}/`);
-    showScreen('host-show');
-    listenSession_host();
-  } catch(e) {
-    showErr('host-id-err', 'セッション作成に失敗しました。Firebase設定を確認してください。');
-  }
-}
-
-function listenSession_host() {
-  if (unsub) unsub();
-  unsub = db.collection('sessions').doc(sessionId).onSnapshot(snap => {
-    if (!snap.exists) return;
-    const d = snap.data();
-    if (d.status === 'guest_joined') {
-      // Guest is ready — open camera to scan their QR
-      openHostScan();
-    } else if (d.status === 'complete' && d.seed) {
-      currentSeed = d.seed;
-      startGenerating();
-    }
-  });
-}
-
-function openHostScan() {
-  stopScanners();
-  hideErr('host-scan-err');
-  showScreen('host-scan');
+function startApp1() {
+  hideErr('scan1-err');
+  showScreen('scan1');
   setTimeout(() => {
-    startScan('scan-video1', 'scan-canvas1', 'host', async (scannedId) => {
-      if (scannedId === hostId) {
-        showErr('host-scan-err', '自分のIDは使用できません。相手のQRをスキャンしてください。');
+    startScan('scan-video1', 'scan-canvas1', 'scan1', (scannedId) => {
+      stopScan('scan1');
+      id1 = scannedId;
+      updateSlot(1, id1);
+      document.getElementById('btn-scan1').textContent = '✅ 1つ目 スキャン済み';
+      document.getElementById('btn-scan2').disabled = false;
+      showScreen('welcome');
+    }, 'scan1-err');
+  }, 350);
+}
+
+function startApp2() {
+  if (!id1) return;
+  hideErr('scan2-err');
+  document.getElementById('scan1-name').textContent = '@' + id1;
+  showScreen('scan2');
+  setTimeout(() => {
+    startScan('scan-video2', 'scan-canvas2', 'scan2', (scannedId) => {
+      if (scannedId === id1) {
+        showErr('scan2-err', '同じIDです。別の人のQRをスキャンしてください。');
         return;
       }
-      stopScan('host');
-      guestId = scannedId;
-      currentSeed = makeSeed(hostId, guestId);
-      try {
-        await db.collection('sessions').doc(sessionId).update({guestId, seed: currentSeed, status: 'complete'});
-      } catch(e) {
-        showFatal('記録に失敗しました: ' + (e.message || '通信エラー'));
-      }
-    }, 'host-scan-err');
+      stopScan('scan2');
+      id2 = scannedId;
+      updateSlot(2, id2);
+      currentSeed = makeSeed(id1, id2);
+      showScreen('welcome');
+      setTimeout(() => startGenerating(), 400);
+    }, 'scan2-err');
   }, 350);
-}
-
-// ============================================================
-// GUEST FLOW
-// ============================================================
-function startGuestFlow() {
-  if (!db) { showScreen('config'); return; }
-  role = 'guest';
-  hideErr('guest-scan-err');
-  showScreen('guest-scan');
-  setTimeout(() => {
-    startScan('scan-video2', 'scan-canvas2', 'guest', async (scannedId) => {
-      stopScan('guest');
-      await onGuestScannedHost(scannedId);
-    }, 'guest-scan-err');
-  }, 350);
-}
-
-async function onGuestScannedHost(scannedHostId) {
-  try {
-    const snap = await db.collection('sessions').doc(scannedHostId).get();
-    if (!snap.exists) {
-      showErr('guest-scan-err', 'セッションが見つかりません。ホストにQRを表示してもらってください。');
-      setTimeout(() => startGuestFlow(), 2000);
-      return;
-    }
-    const d = snap.data();
-    if (d.status !== 'waiting') {
-      showErr('guest-scan-err', 'このセッションはすでに使用済みです。');
-      setTimeout(() => startGuestFlow(), 2000);
-      return;
-    }
-    hostId = scannedHostId;
-    sessionId = scannedHostId;
-    document.getElementById('guest-host-tag').textContent = '@' + hostId;
-    document.getElementById('guest-id-input').value = '';
-    hideErr('guest-id-err');
-    showScreen('guest-id');
-  } catch(e) {
-    showErr('guest-scan-err', '接続に失敗しました: ' + (e.message || '通信エラー'));
-    setTimeout(() => startGuestFlow(), 2500);
-  }
-}
-
-async function onGuestIdEntered() {
-  const val = document.getElementById('guest-id-input').value.trim().replace(/^@/, '');
-  hideErr('guest-id-err');
-  if (!val) return showErr('guest-id-err', 'Instagram IDを入力してください。');
-  if (val.toLowerCase() === hostId) return showErr('guest-id-err', 'ホストと同じIDは使用できません。');
-  if (!/^[a-zA-Z0-9._]{1,30}$/.test(val)) return showErr('guest-id-err', '正しいIDを入力してください（英数字・.・_のみ）。');
-
-  guestId = val.toLowerCase();
-  // Show QR for host to scan
-  document.getElementById('guest-show-tag').textContent = '@' + guestId;
-  makeQR('guest-qr', `https://www.instagram.com/${guestId}/`);
-  showScreen('guest-show');
-  // Notify host that guest is ready
-  try {
-    await db.collection('sessions').doc(sessionId).update({status: 'guest_joined'});
-  } catch(e) {
-    showFatal('セッション更新に失敗しました: ' + (e.message || ''));
-    return;
-  }
-  // Listen for completion
-  listenSession_guest();
-}
-
-function listenSession_guest() {
-  if (unsub) unsub();
-  unsub = db.collection('sessions').doc(sessionId).onSnapshot(snap => {
-    if (!snap.exists) return;
-    const d = snap.data();
-    if (d.status === 'complete' && d.seed) {
-      currentSeed = d.seed;
-      startGenerating();
-    }
-  });
 }
 
 // ============================================================
@@ -715,7 +526,6 @@ function listenSession_guest() {
 // ============================================================
 function startGenerating() {
   stopScanners();
-  if (unsub) { unsub(); unsub = null; }
   showScreen('generating');
   let n = 3;
   const cdEl = document.getElementById('countdown');
@@ -731,9 +541,9 @@ function startGenerating() {
 // RESULT
 // ============================================================
 function showResult() {
-  const ids = [hostId, guestId].filter(Boolean).sort();
-  document.getElementById('res-id-a').textContent = '@' + (ids[0] || '?');
-  document.getElementById('res-id-b').textContent = '@' + (ids[1] || '?');
+  const ids = [id1, id2].sort();
+  document.getElementById('res-id-a').textContent = '@' + ids[0];
+  document.getElementById('res-id-b').textContent = '@' + ids[1];
   curStyle = 'bottts';
   updateChar();
   document.querySelectorAll('.sty-btn').forEach(b => b.classList.remove('active'));
@@ -789,58 +599,12 @@ async function downloadCharacter() {
   }
 }
 
-async function shareCharacter() {
-  const url = charUrl(currentSeed, curStyle);
-  if (navigator.share) {
-    try { await navigator.share({title:'まちキャラ', text:`${hostId||''}×${guestId||''} のキャラクター！`, url}); }
-    catch(e) {}
-  } else {
-    try { await navigator.clipboard.writeText(url); alert('キャラクターURLをコピーしました！'); }
-    catch(e) { prompt('以下のURLをコピーしてください：', url); }
-  }
-}
-
 // ============================================================
 // INIT
 // ============================================================
 window.addEventListener('load', () => {
-  const params = new URLSearchParams(window.location.search);
-  const joinId = params.get('join');
-
-  if (!loadConfig()) {
-    if (joinId) sessionStorage.setItem('pending_join', joinId);
-    showScreen('config');
-    return;
-  }
-
-  if (joinId) {
-    role = 'guest';
-    onGuestScannedHost(joinId);
-    return;
-  }
-
   showScreen('welcome');
 });
 </script>
-
-<!--
-============================================================
-  必要な Firestore セキュリティルール（firestore.rules に追記）
-============================================================
-
-  match /sessions/{sessionId} {
-    // 誰でも読み取り可（セッション参加のため）
-    allow read: if true;
-    // 新規作成可
-    allow create: if true;
-    // status更新・guestId設定・complete処理のみ許可
-    allow update: if true;
-    // 削除は不可
-    allow delete: if false;
-  }
-
-  ※ 本番環境では認証を追加してセキュリティを強化してください。
-============================================================
--->
 </body>
 </html>
