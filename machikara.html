@@ -11,11 +11,13 @@
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ガチャボット</title>
+  <title>キャラガチャ</title>
   <meta name="description" content="2つの入力で世界に1つのキャラクターを生成">
   <meta name="theme-color" content="#7c3aed">
+  <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="ガチャボット">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="キャラガチャ">
 
   <style>
     :root {
@@ -289,7 +291,7 @@
   <div id="screen-welcome" class="screen active">
     <div class="hero">
       <span class="hero-emoji">🤖</span>
-      <div class="hero-title">ガチャボット</div>
+      <div class="hero-title">キャラガチャ</div>
       <div class="hero-sub">2つの入力から<br>世界に1つのキャラクターが生まれる！</div>
     </div>
 
@@ -781,6 +783,11 @@ function goHome() {
 // INIT
 // ============================================================
 window.addEventListener('load', () => showScreen('welcome'));
+
+// Service Worker 登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
