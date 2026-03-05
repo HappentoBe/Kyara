@@ -741,8 +741,9 @@ async function downloadCharacter() {
   try {
     const res     = await fetch(url);
     const svgText = await res.text();
-    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl  = URL.createObjectURL(svgBlob);
+    const svgWithSize = svgText.replace('<svg', '<svg width="512" height="512"');
+    const base64  = btoa(unescape(encodeURIComponent(svgWithSize)));
+    const dataUrl = 'data:image/svg+xml;base64,' + base64;
     const img     = new Image();
     img.onload = () => {
       const c   = document.createElement('canvas');
@@ -755,14 +756,13 @@ async function downloadCharacter() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fname; a.click();
-        URL.revokeObjectURL(svgUrl);
       }, 'image/png');
     };
     img.onerror = () => {
-      const a = document.createElement('a'); a.href = svgUrl;
+      const a = document.createElement('a'); a.href = dataUrl;
       a.download = fname.replace('.png', '.svg'); a.click();
     };
-    img.src = svgUrl;
+    img.src = dataUrl;
   } catch(e) {
     alert('ダウンロードに失敗しました。画像を長押しして保存してください。');
   }
