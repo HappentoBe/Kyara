@@ -60,8 +60,9 @@
     .app { width:100%; max-width:480px; position:relative; z-index:1; }
 
     /* ── Screens ── */
-    .screen { display:none; flex-direction:column; align-items:center; min-height:100vh; padding:2rem 1.5rem 3rem; }
+    .screen { display:none; flex-direction:column; align-items:center; min-height:100vh; padding:2rem 1.5rem 3rem; width:100%; }
     .screen.active { display:flex; }
+    .home-content { width:100%; display:flex; flex-direction:column; align-items:center; }
 
     /* ── Grad text ── */
     .grad-text {
@@ -97,6 +98,7 @@
     ══════════════════════════════════════ */
     .slots-row {
       display: flex;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
       gap: 16px;
@@ -326,13 +328,20 @@
       text-shadow: 3px 3px 0 #0044CC, 6px 6px 0 rgba(0,0,0,0.5);
       line-height: 1;
     }
+    .home-icon-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
     .home-icon {
-      width: 180px;
-      height: 180px;
-      border-radius: 28px;
+      width: 437px;
+      height: 437px;
+      border-radius: 84px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
       margin: 0.5rem auto 1.2rem;
       display: block;
+      text-align: center;
     }
     .home-desc {
       font-size: 1.4rem;
@@ -381,36 +390,34 @@
        HOME
   ══════════════════════════════════════ -->
   <div id="screen-welcome" class="screen active">
-    <!-- タイトル -->
-    <div class="home-title-wrap">
-      <span class="title-kara">キャラ</span>
-      <span class="title-gacha">ガチャ</span>
-    </div>
-
-    <!-- アイコン -->
-    <img src="icon.png" class="home-icon" alt="キャラガチャ">
-
-    <!-- 説明 -->
-    <p class="home-desc">２つのQRコードから<br>世界に１つのアイコンが誕生！！</p>
-
-    <!-- スロット -->
-    <div class="slots-row">
-      <div class="slot" id="slot1" onclick="openInput(1)">
-        <div class="slot-label" id="slot1-label">1つ目</div>
-        <div class="slot-icon" id="slot1-icon">📷</div>
-        <div class="slot-val" id="slot1-val"></div>
+    <div class="home-content">
+      <!-- アイコン -->
+      <div class="home-icon-wrap">
+        <img src="icon.png" class="home-icon" alt="キャラガチャ">
       </div>
-      <div class="plus-sign">×</div>
-      <div class="slot" id="slot2" onclick="openInput(2)">
-        <div class="slot-label" id="slot2-label">2つ目</div>
-        <div class="slot-icon" id="slot2-icon">📷</div>
-        <div class="slot-val" id="slot2-val"></div>
-      </div>
-    </div>
 
-    <button class="btn btn-gacha-home" id="btn-gacha" onclick="startGenerating()" disabled>
-      🎰 ガチャを回す！
-    </button>
+      <!-- 説明 -->
+      <p class="home-desc">２つのQRコードから<br>世界に１つのアイコンが誕生！！</p>
+
+      <!-- スロット -->
+      <div class="slots-row">
+        <div class="slot" id="slot1" onclick="openInput(1)">
+          <div class="slot-label" id="slot1-label">1つ目</div>
+          <div class="slot-icon" id="slot1-icon">📷</div>
+          <div class="slot-val" id="slot1-val"></div>
+        </div>
+        <div class="plus-sign">×</div>
+        <div class="slot" id="slot2" onclick="openInput(2)">
+          <div class="slot-label" id="slot2-label">2つ目</div>
+          <div class="slot-icon" id="slot2-icon">📷</div>
+          <div class="slot-val" id="slot2-val"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-gacha-home" id="btn-gacha" onclick="startGenerating()" disabled>
+        🎰 ガチャを回す！
+      </button>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════
