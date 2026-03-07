@@ -96,34 +96,46 @@
        SLOTS
     ══════════════════════════════════════ */
     .slots-row {
-      display:flex; align-items:center; justify-content:center;
-      gap:14px; margin:28px 0 20px; width:100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 0 0 1.2rem;
+      width: 100%;
     }
     .slot {
-      flex:1; background:var(--card);
-      border:2px dashed rgba(124,58,237,0.5);
-      border-radius:20px; padding:22px 12px;
-      text-align:center; cursor:pointer;
-      transition:border-color 0.3s, background 0.3s, transform 0.15s, box-shadow 0.3s;
-      min-height:116px; display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:6px;
-      position:relative; overflow:hidden;
+      flex:1;
+      background: rgba(80,40,120,0.5);
+      border: 3px dashed rgba(150,100,255,0.6);
+      border-radius: 20px;
+      padding: 20px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s, transform 0.15s, box-shadow 0.3s;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
     }
-    .slot:hover { border-color:rgba(124,58,237,0.8); box-shadow:0 0 20px rgba(124,58,237,0.2); }
-    .slot:active { transform:scale(0.95); }
+    .slot:hover { border-color: rgba(150,100,255,0.9); box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+    .slot:active { transform: scale(0.95); }
     .slot.filled {
-      border:2px solid var(--success);
-      background:rgba(34,197,94,0.07);
-      box-shadow:0 0 20px rgba(34,197,94,0.15);
+      border: 3px solid var(--success);
+      background: rgba(34,197,94,0.1);
+      box-shadow: 0 0 20px rgba(34,197,94,0.15);
     }
-    .slot-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:1px; }
-    .slot-icon  { font-size:32px; margin:2px 0; }
+    .slot-label { font-size: 1.5rem; color: #fff; font-weight: 900; }
+    .slot-icon  { font-size: 7rem; margin: 2px 0; }
     .slot-val   {
-      font-size:10px; color:var(--success); font-weight:700;
-      word-break:break-all; max-width:100%; overflow:hidden;
-      text-overflow:ellipsis; white-space:nowrap; padding:0 4px;
+      font-size: 10px; color: var(--success); font-weight: 700;
+      word-break: break-all; max-width: 100%; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; padding: 0 4px;
     }
-    .plus-sign { font-size:26px; color:var(--muted); flex-shrink:0; }
+    .plus-sign { font-size: 2rem; color: #fff; font-weight: 900; flex-shrink: 0; }
 
     /* ══════════════════════════════════════
        BUTTONS
@@ -275,6 +287,84 @@
     /* ══════════════════════════════════════
        ANIMATIONS
     ══════════════════════════════════════ */
+    /* ══════════════════════════════════════
+       HOME REDESIGN
+    ══════════════════════════════════════ */
+    .home-title-wrap {
+      position: relative;
+      width: 100%;
+      height: 170px;
+      flex-shrink: 0;
+    }
+    .title-kara {
+      position: absolute;
+      left: 4px;
+      bottom: 0;
+      font-size: 5rem;
+      font-weight: 900;
+      font-style: italic;
+      display: inline-block;
+      transform: rotate(-12deg);
+      transform-origin: left bottom;
+      color: #FFD700;
+      -webkit-text-stroke: 3px #FF6600;
+      text-shadow: 3px 3px 0 #FF4400, 6px 6px 0 rgba(0,0,0,0.5);
+      line-height: 1;
+    }
+    .title-gacha {
+      position: absolute;
+      right: 4px;
+      top: 0;
+      font-size: 5rem;
+      font-weight: 900;
+      font-style: italic;
+      display: inline-block;
+      transform: rotate(-12deg);
+      transform-origin: right top;
+      color: #00CCFF;
+      -webkit-text-stroke: 3px #0066FF;
+      text-shadow: 3px 3px 0 #0044CC, 6px 6px 0 rgba(0,0,0,0.5);
+      line-height: 1;
+    }
+    .home-icon {
+      width: 180px;
+      height: 180px;
+      border-radius: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      margin: 0.5rem auto 1.2rem;
+      display: block;
+    }
+    .home-desc {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #fff;
+      -webkit-text-stroke: 2px #333;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 1.2rem;
+    }
+    .btn-gacha-home {
+      font-size: 1.3rem;
+      font-weight: 900;
+      padding: 1.2rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #7C3AED, #EC4899);
+    }
+    .btn-gacha-home:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ══════════════════════════════════════
+       INPUT SCREEN – font-size ×2
+    ══════════════════════════════════════ */
+    #screen-input .step-badge { font-size: 1.44rem; }
+    #screen-input .tab-btn    { font-size: 1.9rem; }
+    #screen-input .err        { font-size: 1.66rem; }
+    #screen-input .url-input  { font-size: 1.9rem; }
+    #screen-input .btn        { font-size: 2rem; }
+    #screen-input .btn-g      { font-size: 1.76rem; }
+
     @keyframes float        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
     @keyframes dotPop       { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.6} }
     @keyframes gachaRotate  { to{transform:rotate(360deg)} }
@@ -291,18 +381,26 @@
        HOME
   ══════════════════════════════════════ -->
   <div id="screen-welcome" class="screen active">
-    <div class="hero">
-      <img src="icon.png" style="width:120px;height:120px;border-radius:24px;margin-bottom:12px;">
-      <div class="hero-sub">2つのQRコードから<br>世界に1つのキャラクターが生まれる！</div>
+    <!-- タイトル -->
+    <div class="home-title-wrap">
+      <span class="title-kara">キャラ</span>
+      <span class="title-gacha">ガチャ</span>
     </div>
 
+    <!-- アイコン -->
+    <img src="icon.png" class="home-icon" alt="キャラガチャ">
+
+    <!-- 説明 -->
+    <p class="home-desc">２つのQRコードから<br>世界に１つのアイコンが誕生！！</p>
+
+    <!-- スロット -->
     <div class="slots-row">
       <div class="slot" id="slot1" onclick="openInput(1)">
         <div class="slot-label" id="slot1-label">1つ目</div>
         <div class="slot-icon" id="slot1-icon">📷</div>
         <div class="slot-val" id="slot1-val"></div>
       </div>
-      <div class="plus-sign">✕</div>
+      <div class="plus-sign">×</div>
       <div class="slot" id="slot2" onclick="openInput(2)">
         <div class="slot-label" id="slot2-label">2つ目</div>
         <div class="slot-icon" id="slot2-icon">📷</div>
@@ -310,7 +408,7 @@
       </div>
     </div>
 
-    <button class="btn btn-p" id="btn-gacha" onclick="startGenerating()" disabled>
+    <button class="btn btn-gacha-home" id="btn-gacha" onclick="startGenerating()" disabled>
       🎰 ガチャを回す！
     </button>
   </div>
@@ -321,8 +419,8 @@
   <div id="screen-input" class="screen">
     <div style="width:100%;padding-top:3rem;">
       <span class="step-badge" id="input-badge">SLOT 1</span>
-      <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:.4rem;" id="input-title">1つ目を入力</h2>
-      <p style="color:var(--muted);font-size:.83rem;margin-bottom:1.1rem;">
+      <h2 style="font-size:2.6rem;font-weight:700;margin-bottom:.4rem;" id="input-title">1つ目を入力</h2>
+      <p style="color:var(--muted);font-size:1.66rem;margin-bottom:1.1rem;">
         QRスキャンまたはURLを貼り付けてください
       </p>
 
@@ -345,7 +443,7 @@
           </div>
         </div>
         <div id="scan-err" class="err" style="margin-top:.6rem;"></div>
-        <p style="color:var(--muted);font-size:.78rem;text-align:center;margin-top:.6rem;">
+        <p style="color:var(--muted);font-size:1.56rem;text-align:center;margin-top:.6rem;">
           QRコードにカメラを向けると自動で読み取ります
         </p>
       </div>
